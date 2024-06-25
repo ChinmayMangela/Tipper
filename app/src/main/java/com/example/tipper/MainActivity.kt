@@ -1,10 +1,14 @@
 package com.example.tipper
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -32,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -72,7 +78,7 @@ fun Body(paddingValues: PaddingValues) {
     var tipValue by remember { mutableStateOf("") }
     var totalValue by remember { mutableStateOf("") }
     fun updateCalculations() {
-        if(baseValue.isNotBlank()) {
+        if (baseValue.isNotBlank()) {
             tipValue = calculateTip(baseValue, sliderPosition)
             totalValue = (baseValue.toFloat() + tipValue.toFloat()).toString()
         } else {
@@ -80,32 +86,38 @@ fun Body(paddingValues: PaddingValues) {
             totalValue = "0.0"
         }
     }
-    Column(
-        horizontalAlignment = Alignment.End,
-        modifier = Modifier
-            .padding(paddingValues)
-            .padding(
-                start = 40.dp,
-                top = 30.dp,
-                bottom = 30.dp,
-                end = 50.dp,
-            )
-            .fillMaxSize()
-
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        BaseValueComponent(baseValue) { newValue ->
-            baseValue = newValue
-            updateCalculations()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(
+                    start = 40.dp,
+                    top = 30.dp,
+                    bottom = 30.dp,
+                    end = 50.dp,
+                )
+                .fillMaxSize()
+
+        ) {
+            BaseValueComponent(baseValue) { newValue ->
+                baseValue = newValue
+                updateCalculations()
+            }
+            Spacer(Modifier.height(30.dp))
+            SliderComponent(sliderPosition) { newPosition ->
+                sliderPosition = newPosition
+                updateCalculations()
+            }
+            Spacer(Modifier.height(50.dp))
+            TipComponent(tipValue)
+            Spacer(Modifier.height(30.dp))
+            TotalValueComponent(totalValue)
         }
-        Spacer(Modifier.height(30.dp))
-        SliderComponent(sliderPosition) { newPosition ->
-            sliderPosition = newPosition
-            updateCalculations()
-        }
-        Spacer(Modifier.height(50.dp))
-        TipComponent(tipValue)
-        Spacer(Modifier.height(30.dp))
-        TotalValueComponent(totalValue)
+        OpenLinkedInProfile()
     }
 }
 
@@ -133,17 +145,25 @@ fun BaseValueComponent(baseValue: String, onValueChange: (String) -> Unit) {
         TextComponent("Base")
         SpacerComponent()
         TextField(
+
             singleLine = true,
             value = baseValue, onValueChange = onValueChange,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Cyan,
+                unfocusedIndicatorColor = Color.Cyan,
+                cursorColor = Color.Cyan,
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent
             ),
-            label = { Text("Bill Amount", style = TextStyle(
-                color = Color.Gray,
-                fontSize = 18.sp
-            ) )},
+            label = {
+                Text(
+                    "Bill Amount", style = TextStyle(
+                        color = Color.Gray,
+                        fontSize = 15.sp
+                    )
+                )
+            },
             shape = RoundedCornerShape(4.dp)
         )
     }
@@ -154,27 +174,34 @@ fun SliderComponent(sliderPosition: Float, onValueChange: (Float) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        var tipTag by remember { mutableStateOf(TipTag.Poor) }
+        var tipDescription by remember { mutableStateOf(TipDescription.Poor) }
+        var tipDescriptionColor by remember { mutableStateOf(Color(0xFFDC1E0B)) }
         TextComponent("${sliderPosition.toInt()}%")
         SpacerComponent()
         Column(
             verticalArrangement = Arrangement.Center
         ) {
             Slider(
+                colors = SliderDefaults.colors(
+                    activeTrackColor = Color.Cyan,
+                    activeTickColor = Color.Cyan,
+                    inactiveTickColor = Color.Cyan,
+                    inactiveTrackColor = Color.Gray,
+                    thumbColor = Color.Cyan
+                ),
                 modifier = Modifier.width(270.dp),
                 value = sliderPosition,
                 onValueChange = onValueChange,
                 valueRange = 0f..30f
             )
-            tipTag = when (sliderPosition.toInt()) {
-                in 0..10 -> TipTag.Poor
-                in 10..15 -> TipTag.Average
-                in 15..25 -> TipTag.Good
-                else -> TipTag.Amazing
-            }
+            tipDescription = upgradeTipDescription(sliderPosition)
+            tipDescriptionColor = updateColor(tipDescription)
+
+
             Text(
-                tipTag.toString(), style = TextStyle(
-                    fontSize = 16.sp
+                tipDescription.toString(), style = TextStyle(
+                    fontSize = 16.sp,
+                    color = tipDescriptionColor
                 )
             )
         }
@@ -202,11 +229,42 @@ fun TotalValueComponent(totalValue: String) {
 
 }
 
-enum class TipTag {
+@Composable
+fun OpenLinkedInProfile() {
+    val context = LocalContext.current
+    val linkedInUrl = "https://www.linkedin.com/in/chinmaymangela/"
+    Text(
+        ("Made With ❤\uFE0F By Chinmay").uppercase(),
+        modifier = Modifier.padding(bottom = 70.dp).clickable {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(linkedInUrl))
+            context.startActivity(intent)
+        }
+    )
+}
+
+enum class TipDescription {
     Poor,
-    Average,
+    Acceptable,
     Good,
     Amazing
+}
+
+fun upgradeTipDescription(sliderPosition: Float): TipDescription {
+    return when (sliderPosition.toInt()) {
+        in 0..9 -> TipDescription.Poor
+        in 10..14 -> TipDescription.Acceptable
+        in 14..24 -> TipDescription.Good
+        else -> TipDescription.Amazing
+    }
+}
+
+fun updateColor(tipTag: TipDescription): Color {
+    return when (tipTag) {
+        TipDescription.Poor -> Color(0xFFDC1E0B)
+        TipDescription.Acceptable -> Color(0xFFDCA10B)
+        TipDescription.Good -> Color(0xFFABF346)
+        TipDescription.Amazing -> Color(0xFF35BA01)
+    }
 }
 
 fun calculateTip(baseValue: String, sliderPosition: Float): String {
@@ -215,3 +273,4 @@ fun calculateTip(baseValue: String, sliderPosition: Float): String {
     val tip = base * tipPercentage
     return "%.2f".format(tip)
 }
+
