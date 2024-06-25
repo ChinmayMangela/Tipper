@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tipper.ui.theme.TipperTheme
@@ -172,13 +173,14 @@ fun BaseValueComponent(baseValue: String, onValueChange: (String) -> Unit) {
 @Composable
 fun SliderComponent(sliderPosition: Float, onValueChange: (Float) -> Unit) {
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         var tipDescription by remember { mutableStateOf(TipDescription.Poor) }
         var tipDescriptionColor by remember { mutableStateOf(Color(0xFFDC1E0B)) }
         TextComponent("${sliderPosition.toInt()}%")
         SpacerComponent()
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Slider(
@@ -201,7 +203,8 @@ fun SliderComponent(sliderPosition: Float, onValueChange: (Float) -> Unit) {
             Text(
                 tipDescription.toString(), style = TextStyle(
                     fontSize = 16.sp,
-                    color = tipDescriptionColor
+                    color = tipDescriptionColor,
+                    textAlign = TextAlign.Center
                 )
             )
         }
